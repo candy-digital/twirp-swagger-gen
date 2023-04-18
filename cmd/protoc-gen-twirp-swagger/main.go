@@ -5,8 +5,8 @@ import (
 	"flag"
 
 	"github.com/apex/log"
+	"github.com/candy-digital/twirp-swagger-gen/internal/swagger"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/go-bridget/twirp-swagger-gen/internal/swagger"
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
