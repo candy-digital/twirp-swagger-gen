@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/apex/log"
 	"github.com/candy-digital/twirp-swagger-gen/internal/swagger"
