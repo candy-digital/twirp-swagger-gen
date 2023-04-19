@@ -189,17 +189,25 @@ func (sw *Writer) RPC(rpc *proto.RPC) {
 
 func (sw *Writer) Enum(enum *proto.Enum) {
 	definitionName := fmt.Sprintf("%s_%s", sw.packageName, enum.Name)
-	schemaDesc := description(enum.Comment)
-	schemaProps := make(map[string]spec.Schema)
+	var enumValues []string
+	for _, element := range enum.Elements {
+		switch val := element.(type) {
+		case *proto.EnumField:
+			enumValues = append(enumValues, val.Name)
+		default:
+			log.Debugf("prepare: uknown field type: %T", element)
+		}
+	}
 
-	sw.Swagger.Definitions[definitionName] = spec.Schema{
+	schema := &spec.Schema{
 		SchemaProps: spec.SchemaProps{
-			Title:       comment(enum.Comment),
-			Description: strings.TrimSpace(schemaDesc),
-			Type:        spec.StringOrArray([]string{"object"}),
-			Properties:  schemaProps,
+			Title: comment(enum.Comment),
+			Type:  spec.StringOrArray([]string{"string"}),
 		},
 	}
+	schema.WithEnum(enumValues)
+
+	sw.Swagger.Definitions[definitionName] = *schema
 }
 
 func (sw *Writer) Message(msg *proto.Message) {
