@@ -26,6 +26,7 @@ func parse(hostname, filename, output, prefix string) error {
 }
 
 func main() {
+	fmt.Println("This is running candy-digital/twirp-swagger-gen")
 	var (
 		in         string
 		out        string
