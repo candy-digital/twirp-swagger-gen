@@ -342,8 +342,12 @@ func (sw *Writer) Message(msg *proto.Message) {
 			addField(val.Field, false)
 		case *proto.NormalField:
 			addField(val.Field, val.Repeated)
+		case *proto.Enum:
+			sw.Enum(val)
+		case *proto.Message:
+			sw.Message(val)
 		default:
-			log.Infof("Unknown field type: %T", element)
+			log.Infof("Unknown field type: %T, file: %s", element, sw.filename)
 		}
 	}
 
