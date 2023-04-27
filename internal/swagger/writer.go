@@ -87,7 +87,7 @@ func (sw *Writer) Import(i *proto.Import) {
 	}
 
 	// additional files walked for messages and imports only
-	proto.Walk(definition, proto.WithPackage(withPackage), proto.WithImport(sw.Import), proto.WithMessage(sw.Message))
+	proto.Walk(definition, proto.WithPackage(withPackage), proto.WithImport(sw.Import), proto.WithMessage(sw.Message), proto.WithEnum(sw.Enum))
 
 	sw.packageName = oldPackageName
 }
@@ -159,7 +159,7 @@ func (sw *Writer) RPC(rpc *proto.RPC) {
 										Description: "A successful response.",
 										Schema: &spec.Schema{
 											SchemaProps: spec.SchemaProps{
-												Ref: spec.MustCreateRef(fmt.Sprintf("#/definitions/%s_%s", sw.packageName, rpc.ReturnsType)),
+												Ref: spec.MustCreateRef(fmt.Sprintf("#/definitions/%s.%s", sw.packageName, rpc.ReturnsType)),
 											},
 										},
 									},
@@ -175,7 +175,7 @@ func (sw *Writer) RPC(rpc *proto.RPC) {
 								Required: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: spec.MustCreateRef(fmt.Sprintf("#/definitions/%s_%s", sw.packageName, rpc.RequestType)),
+										Ref: spec.MustCreateRef(fmt.Sprintf("#/definitions/%s.%s", sw.packageName, rpc.RequestType)),
 									},
 								},
 							},
@@ -188,14 +188,18 @@ func (sw *Writer) RPC(rpc *proto.RPC) {
 }
 
 func (sw *Writer) Enum(enum *proto.Enum) {
-	definitionName := fmt.Sprintf("%s_%s", sw.packageName, enum.Name)
+	definitionName := fmt.Sprintf("%s.%s", sw.packageName, enum.Name)
+	if _, ok := sw.Swagger.Definitions[definitionName]; ok {
+		return
+	}
+
 	var enumValues []string
 	for _, element := range enum.Elements {
 		switch val := element.(type) {
 		case *proto.EnumField:
 			enumValues = append(enumValues, val.Name)
 		default:
-			log.Debugf("prepare: uknown field type: %T", element)
+			log.Infof("prepare: uknown field type: %T", element)
 		}
 	}
 
@@ -211,7 +215,7 @@ func (sw *Writer) Enum(enum *proto.Enum) {
 }
 
 func (sw *Writer) Message(msg *proto.Message) {
-	definitionName := fmt.Sprintf("%s_%s", sw.packageName, msg.Name)
+	definitionName := fmt.Sprintf("%s.%s", sw.packageName, msg.Name)
 
 	schemaProps := make(map[string]spec.Schema)
 
@@ -301,8 +305,14 @@ func (sw *Writer) Message(msg *proto.Message) {
 
 		// Prefix rich type with package name
 		if !strings.Contains(fieldType, ".") {
-			fieldType = sw.packageName + "_" + fieldType
+			parentFieldType := sw.packageName + "." + msg.Name + "." + fieldType
+			if _, ok := sw.Definitions[parentFieldType]; ok {
+				fieldType = sw.packageName + "." + msg.Name + "." + fieldType
+			} else {
+				fieldType = sw.packageName + "." + fieldType
+			}
 		}
+
 		ref := fmt.Sprintf("#/definitions/%s", fieldType)
 
 		if repeated {
@@ -343,6 +353,7 @@ func (sw *Writer) Message(msg *proto.Message) {
 		case *proto.NormalField:
 			addField(val.Field, val.Repeated)
 		case *proto.Enum:
+			val.Name = fmt.Sprintf("%s.%s", msg.Name, val.Name)
 			sw.Enum(val)
 		case *proto.Message:
 			sw.Message(val)
