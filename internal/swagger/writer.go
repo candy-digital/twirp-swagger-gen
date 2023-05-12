@@ -36,24 +36,7 @@ func NewWriter(filename, hostname, pathPrefix string, swaggerOpt ...SwaggerOpt) 
 		filename:   filename,
 		hostname:   hostname,
 		pathPrefix: pathPrefix,
-		Swagger: &spec.Swagger{SwaggerProps: spec.SwaggerProps{
-			ID:                  "",
-			Consumes:            nil,
-			Produces:            nil,
-			Schemes:             nil,
-			Swagger:             "",
-			Info:                nil,
-			Host:                "",
-			BasePath:            "",
-			Paths:               nil,
-			Definitions:         nil,
-			Parameters:          nil,
-			Responses:           nil,
-			SecurityDefinitions: nil,
-			Security:            nil,
-			Tags:                nil,
-			ExternalDocs:        nil,
-		}},
+		Swagger:    &spec.Swagger{},
 	}
 
 	for _, o := range swaggerOpt {
