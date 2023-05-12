@@ -21,6 +21,8 @@ func main() {
 	hostname := flags.String("hostname", "example.com", "")
 	pathPrefix := flags.String("path_prefix", "/twirp", "")
 	outputSuffix := flags.String("output_suffix", ".swagger.json", "")
+	authMode := flags.String("auth_mode", "", "only bearer (via swagger 2 API key) is supported")
+
 	opts := protogen.Options{
 		ParamFunc: flags.Set,
 	}
@@ -34,7 +36,18 @@ func main() {
 				continue
 			}
 
-			writer := swagger.NewWriter(in, *hostname, *pathPrefix)
+			var swaggerOpts []swagger.SwaggerOpt
+
+			if authMode != nil && *authMode != "" {
+				switch *authMode {
+				case "bearer":
+					swaggerOpts = append(swaggerOpts, swagger.WithBearerAuthentication())
+				default:
+					log.Warnf("unsupported auth mode: %q", *authMode)
+				}
+			}
+			writer := swagger.NewWriter(in, *hostname, *pathPrefix, swaggerOpts...)
+
 			if err := writer.WalkFile(); err != nil {
 				if errors.Is(err, swagger.ErrNoServiceDefinition) {
 					log.Debugf("skip writing file, %s: %q", err, in)

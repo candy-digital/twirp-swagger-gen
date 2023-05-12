@@ -26,16 +26,41 @@ type Writer struct {
 	packageName string
 }
 
-func NewWriter(filename, hostname, pathPrefix string) *Writer {
+type SwaggerOpt func(*spec.Swagger)
+
+func NewWriter(filename, hostname, pathPrefix string, swaggerOpt ...SwaggerOpt) *Writer {
 	if pathPrefix == "" {
 		pathPrefix = "/twirp"
 	}
-	return &Writer{
+	w := &Writer{
 		filename:   filename,
 		hostname:   hostname,
 		pathPrefix: pathPrefix,
-		Swagger:    &spec.Swagger{},
+		Swagger: &spec.Swagger{SwaggerProps: spec.SwaggerProps{
+			ID:                  "",
+			Consumes:            nil,
+			Produces:            nil,
+			Schemes:             nil,
+			Swagger:             "",
+			Info:                nil,
+			Host:                "",
+			BasePath:            "",
+			Paths:               nil,
+			Definitions:         nil,
+			Parameters:          nil,
+			Responses:           nil,
+			SecurityDefinitions: nil,
+			Security:            nil,
+			Tags:                nil,
+			ExternalDocs:        nil,
+		}},
 	}
+
+	for _, o := range swaggerOpt {
+		o(w.Swagger)
+	}
+
+	return w
 }
 
 func (sw *Writer) Package(pkg *proto.Package) {
